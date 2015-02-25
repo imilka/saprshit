@@ -1,0 +1,124 @@
+<html ng-app="optimizationApp">
+
+    <head>
+
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/ripples.min.css" rel="stylesheet">
+        <link href="css/material-wfont.min.css" rel="stylesheet">
+
+        <style type="text/css">
+          body {
+            padding:20px;
+          }
+
+          .resistor-values {
+            float:left;
+          }
+
+          .resistor-values input {
+            width:50px;
+            margin:10px;
+          }
+
+          .voltage-values {
+            float:left;
+            margin-left:50px;
+          }
+
+          .gradient-values {
+            float:left;
+            margin-left:50px;
+          }
+
+          table tr td {
+            padding:10px;
+          }
+
+          table tr td:first-child {
+            font-weight: bold;
+            padding-left:0px;
+          }
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="container" ng-controller="MainController">
+          <h1>Model</h1>
+
+          <div class="resistor-values">
+            <h3>Resistors</h3>
+
+            <div ng-repeat="resistor in resistors">
+              <label ng-attr-for="{{resistor.name}}">{{resistor.name}}</label>
+              <input ng-change="resistor.value != '' && recalculateModel()" ng-model="resistor.value" type="text" ng-attr-id="{{resistor.name}}" />
+              <br/>
+            </div>
+          </div>
+
+          <div class="voltage-values">
+            <h3>Voltages</h3>
+
+            <table>
+              <tbody>
+              <tr ng-repeat="voltage in nodeVoltages"><td>U{{$index + 1}}:</td><td>{{voltage | number:2}}</td></tr>
+              <!--<tr><td>U2:</td><td>-1</td></tr>-->
+              <!-- <tr><td>U3:</td><td>4</td></tr>-->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="gradient-values">
+            <h3>Gradient</h3>
+
+            <table>
+              <tbody>
+                <tr ng-repeat="gradientValue in gradientVector track by $index">
+                  <td>R{{$index + 2}}:</td>
+                  <td>{{gradientValue | number:2}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="clearfix"></div>
+          <h1>Calculation</h1>
+        </div>
+
+        <!--<h1>You can add your site here.</h1>
+
+        <h2>To ensure that material-design theme is working, check out the buttons below.</h2>
+
+        <h3 class="text-muted">If you can see the ripple effect on clicking them, then you are good to go!</h3>
+
+
+        <p class="bs-component">
+            <a href="javascript:void(0)" class="btn btn-default">Default</a>
+            <a href="javascript:void(0)" class="btn btn-primary">Primary</a>
+            <a href="javascript:void(0)" class="btn btn-success">Success</a>
+            <a href="javascript:void(0)" class="btn btn-info">Info</a>
+            <a href="javascript:void(0)" class="btn btn-warning">Warning</a>
+            <a href="javascript:void(0)" class="btn btn-danger">Danger</a>
+            <a href="javascript:void(0)" class="btn btn-link">Link</a>
+        </p>
+-->
+        <!-- Your site ends -->
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.4/angular.min.js"></script>
+
+        <script src="js/numeric-1.2.6.min.js"></script>
+        <script src="main.js"></script>
+        <script src="js/ripples.min.js"></script>
+        <script src="js/material.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                $.material.init();
+            });
+        </script>
+
+    </body>
+
+</html>
