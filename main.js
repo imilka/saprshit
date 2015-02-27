@@ -206,8 +206,10 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
     }
   );
 
-  $scope.ax = 1; $scope.bx = 100; $scope.cx = 0;
+  $scope.ax = 1; $scope.bx = 500; $scope.cx = 0;
   $scope.fa = 0; $scope.fb = 0; $scope.fc = 0;
+
+  $scope.stepsTaken = 0;
 
   $scope.GOLD = 1.618034; $scope.GLIMIT = 2; $scope.TINY = 1e-20;
   $scope.R = 0.61803399; $scope.C = 1-$scope.R;
@@ -281,6 +283,8 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
         "y": $scope.currentMin
       });
       $scope.chart.validateData();
+
+      $scope.stepsTaken++;
     }
 
     $scope.$emit('updatedEvent', null);

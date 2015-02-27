@@ -56,7 +56,7 @@
 
             <div ng-repeat="resistor in resistors">
               <label ng-attr-for="{{resistor.name}}">{{resistor.name}}</label>
-              <input ng-change="resistor.value != '' && recalculateModel()" ng-model="resistor.value" type="text" ng-attr-id="{{resistor.name}}" />
+              <input ng-disabled="resistor.name == 'R1'" ng-change="resistor.value != '' && recalculateModel()" ng-model="resistor.value" type="text" ng-attr-id="{{resistor.name}}" />
               <br/>
             </div>
           </div>
@@ -94,6 +94,7 @@
             <div style="margin-left:25px;float:left;">
               <h4>{{modifiedResistor.name}} value: {{modifiedResistor.value | number:4}}</h4>
               <h4>Target function value: {{currentMin | number:4}}</h4>
+              <h4>Steps taken: {{stepsTaken}}</h4>
               <br>
               <h5>x0: {{x0 | number:4}}</h5>
               <h5>x1: {{x1 | number:4}}</h5>
