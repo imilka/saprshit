@@ -6,6 +6,9 @@
         <link href="css/ripples.min.css" rel="stylesheet">
         <link href="css/material-wfont.min.css" rel="stylesheet">
 
+      <script src="js/amcharts/amcharts.js" type="text/javascript"></script>
+      <script src="js/amcharts/xy.js" type="text/javascript"></script>
+
         <style type="text/css">
           body {
             padding:20px;
@@ -46,6 +49,7 @@
 
         <div class="container" ng-controller="MainController">
           <h1>Model</h1>
+          <h4>Target function value: {{targetFunctionValue | number:2}}</h4>
 
           <div class="resistor-values">
             <h3>Resistors</h3>
@@ -83,7 +87,22 @@
           </div>
 
           <div class="clearfix"></div>
-          <h1>Calculation</h1>
+          <h1>Golden Section Search</h1>
+
+          <div ng-controller="GoldController">
+            <div id="chartdiv" style="float:left;width: 800px; height: 400px; background-color: #FFFFFF;" ></div>
+            <div style="margin-left:25px;float:left;">
+              <h4>{{modifiedResistor.name}} value: {{modifiedResistor.value | number:4}}</h4>
+              <h4>Target function value: {{currentMin | number:4}}</h4>
+              <br>
+              <h5>x0: {{x0 | number:4}}</h5>
+              <h5>x1: {{x1 | number:4}}</h5>
+              <h5>x2: {{x2 | number:4}}</h5>
+              <h5>x3: {{x3 | number:4}}</h5>
+              <br>
+              <button ng-click="findMinimumStep()" class="btn btn-primary btn-raised">Step</button>
+            </div>
+          </div>
         </div>
 
         <!--<h1>You can add your site here.</h1>
