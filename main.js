@@ -185,7 +185,44 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
         "graph": "g1",
         "scrollbarHeight": 20
       },
-      "guides": [],
+      "guides": [
+        {
+          "label": "x0",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x1",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x2",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x3",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        }
+      ],
       "valueAxes": [
         {
           "id": "ValueAxis-1",
@@ -209,7 +246,7 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
   $scope.ax = 1; $scope.bx = 500; $scope.cx = 0;
   $scope.fa = 0; $scope.fb = 0; $scope.fc = 0;
 
-  $scope.stepsTaken = 0;
+  $scope.stepsTaken = 0; $scope.functionCalculated = 0;
 
   $scope.GOLD = 1.618034; $scope.GLIMIT = 2; $scope.TINY = 1e-20;
   $scope.R = 0.61803399; $scope.C = 1-$scope.R;
@@ -255,6 +292,13 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
       $scope.x2 = $scope.bx; $scope.x1 = $scope.bx-$scope.C*($scope.bx-$scope.ax);
     }
 
+    $scope.chart.guides[0].value = $scope.x0;
+    $scope.chart.guides[1].value = $scope.x1;
+    $scope.chart.guides[2].value = $scope.x2;
+    $scope.chart.guides[3].value = $scope.x3;
+    $scope.chart.validateData();
+
+    $scope.functionCalculated = 2;
     /*while(Math.abs($scope.x3-$scope.x0) > $scope.TOL*(Math.abs($scope.x1) + Math.abs($scope.x2))) {
 
     }*/
@@ -275,6 +319,13 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
         f1 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x1);
       }
 
+      $scope.chart.guides[0].value = $scope.x0;
+      $scope.chart.guides[1].value = $scope.x1;
+      $scope.chart.guides[2].value = $scope.x2;
+      $scope.chart.guides[3].value = $scope.x3;
+
+      $scope.functionCalculated += 1;
+
       $scope.currentMin = f1 < f2 ? f1 : f2;
       $scope.currentMinX = f1 < f2 ? $scope.x1 : $scope.x2;
 
@@ -288,7 +339,7 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
     }
 
     $scope.$emit('updatedEvent', null);
-  }
+  };
 
   $scope.calculateBrackets();
   console.log('after');
