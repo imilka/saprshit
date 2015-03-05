@@ -87,7 +87,7 @@
             </table>
           </div>
 
-          <div class="clearfix"></div>
+          <!--<div class="clearfix"></div>
           <h1>Golden Section Search</h1>
 
           <div ng-controller="GoldController">
@@ -103,6 +103,26 @@
               <h5>x1: {{x1 | number:4}}</h5>
               <h5>x2: {{x2 | number:4}}</h5>
               <h5>x3: {{x3 | number:4}}</h5>
+              <br>
+              <button ng-click="findMinimumStep()" class="btn btn-primary btn-raised">Step</button>
+            </div>
+          </div>-->
+
+          <div class="clearfix"></div>
+          <h1>Quadratic interpolation method</h1>
+
+          <div ng-controller="PowellController">
+            <div id="chartdiv-pwc" style="float:left;width: 800px; height: 400px; background-color: #FFFFFF;" ></div>
+            <div style="margin-left:25px;float:left;">
+              <h4>{{modifiedResistor.name}} value: {{modifiedResistor.value | number:4}}</h4>
+              <h4>Target function value: {{currentMin | number:4}}</h4>
+              <br>
+              <h4>Steps taken: {{stepsTaken}}</h4>
+              <h4>Function calculations: {{functionCalculated}}</h4>
+              <br>
+              <h5>a: {{ax | number:4}}</h5>
+              <h5>b: {{bx | number:4}}</h5>
+              <h5>c: {{cx | number:4}}</h5>
               <br>
               <button ng-click="findMinimumStep()" class="btn btn-primary btn-raised">Step</button>
             </div>
