@@ -157,7 +157,7 @@ module.controller('PowellController', ['$scope', 'ModelService', function($scope
     {
       "type": "xy",
       "pathToImages": "http://cdn.amcharts.com/lib/3/images/",
-      "startDuration": 1.5,
+      "startDuration": 0,
       "trendLines": [],
       "graphs": [
         {
@@ -223,7 +223,9 @@ module.controller('PowellController', ['$scope', 'ModelService', function($scope
         {
           "id": "ValueAxis-2",
           "position": "bottom",
-          "axisAlpha": 0
+          "axisAlpha": 0,
+          "minimum": 0,
+          "maximum": 20
         }
       ],
       "allLabels": [],
@@ -240,7 +242,7 @@ module.controller('PowellController', ['$scope', 'ModelService', function($scope
   );
 
   $scope.TOL = 0.01; $scope.GOLD = 1.618034;
-  $scope.ax = 4; $scope.bx = 12; $scope.cx = 0;
+  $scope.ax = 1; $scope.bx = 20; $scope.cx = 0;
   $scope.fa = 0; $scope.fb = 0; $scope.fc = 0;
   $scope.modifiedResistor = model.getResistorsList()[1];
   $scope.stepsTaken = 0; $scope.functionCalculated = 0;
@@ -313,17 +315,17 @@ module.controller('PowellController', ['$scope', 'ModelService', function($scope
       $scope.cx = $scope.dx; $scope.fc = $scope.fd;
     }
 
-    $scope.chart.guides[0].value = $scope.ax;
-    $scope.chart.guides[1].value = $scope.bx;
-    $scope.chart.guides[2].value = $scope.cx;
-
-    $scope.currentMin = Math.min($scope.fa, $scope.fb, $scope.fc);
+    $scope.currentMin = $scope.fm;
     $scope.currentMinX = $scope.fa < $scope.fb ? $scope.ax : $scope.fb < $scope.fc ? $scope.bx : $scope.cx;
 
     $scope.chart.dataProvider.push({
       "x": $scope.currentMinX,
       "y": $scope.currentMin
     });
+
+    $scope.chart.guides[0].value = $scope.ax;
+    $scope.chart.guides[1].value = $scope.bx;
+    $scope.chart.guides[2].value = $scope.cx;
 
     $scope.chart.validateData();
     $scope.stepsTaken++; $scope.functionCalculated++;
@@ -528,6 +530,209 @@ module.controller('GoldController', ['$scope', 'ModelService', function($scope, 
   console.log($scope.ax, $scope.bx, $scope.cx);
   console.log($scope.fa, $scope.fb, $scope.fc);
   $scope.findMinimum();
+}]);
+
+module.controller('GradientDescentController', ['$scope', 'ModelService', function($scope, model) {
+  $scope.chart = AmCharts.makeChart("chartdiv-gdc",
+    {
+      "type": "xy",
+      "pathToImages": "http://cdn.amcharts.com/lib/3/images/",
+      "startDuration": 1.5,
+      "trendLines": [],
+      "graphs": [
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "diamond",
+          "id": "AmGraph-1",
+          "lineAlpha": 0,
+          "lineColor": "#b0de09",
+          "valueField": "value",
+          "xField": "x",
+          "yField": "y"
+        },
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "round",
+          "id": "AmGraph-2",
+          "lineAlpha": 0,
+          "lineColor": "#fcd202",
+          "valueField": "value2",
+          "xField": "x2",
+          "yField": "y2"
+        }
+      ],
+      "chartScrollbar": {
+        "autoGridCount": true,
+        "graph": "g1",
+        "scrollbarHeight": 20
+      },
+      "guides": [
+        {
+          "label": "x0",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x1",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x2",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x3",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        }
+      ],
+      "valueAxes": [
+        {
+          "id": "ValueAxis-1",
+          "axisAlpha": 0
+        },
+        {
+          "id": "ValueAxis-2",
+          "position": "bottom",
+          "axisAlpha": 0
+        }
+      ],
+      "allLabels": [],
+      "balloon": {},
+      "titles": [],
+      "dataProvider": [{
+        "x":0, "y":0
+      }]
+    }
+  );
+
+  $scope.ax = 30;
+  $scope.fa = 0;
+  $scope.step = 0.5;
+
+  $scope.stepsTaken = 0; $scope.functionCalculated = 0;
+  $scope.modifiedResistor = model.getResistorsList()[1];
+
+  $scope.findMinimumStep = function() {
+    $scope.ax = $scope.ax - $scope.step * model.getGradientVector()[1];
+    $scope.fa = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.ax);
+    $scope.$emit('updatedEvent', null);
+
+    $scope.stepsTaken++;
+    $scope.functionCalculated += 1;
+    $scope.currentMin = $scope.fa;
+
+    $scope.chart.dataProvider.push({
+      "x": $scope.ax,
+      "y": $scope.fa
+    });
+    $scope.chart.validateData();
+
+    /*var f1 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x1);
+    var f2 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x2);
+
+    if(Math.abs($scope.x3-$scope.x0) > $scope.TOL*(Math.abs($scope.x1) + Math.abs($scope.x2))) {
+      if(f2 < f1) {
+        $scope.x0 = $scope.x1; $scope.x1 = $scope.x2; $scope.x2=$scope.R*$scope.x1+$scope.C*$scope.x3;
+        f1 = f2;
+        f2 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x2);
+      } else {
+        $scope.x3 = $scope.x2; $scope.x2 = $scope.x1; $scope.x1 = $scope.R*$scope.x2 + $scope.C*$scope.x0;
+        f2 = f1;
+        f1 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x1);
+      }
+
+      $scope.chart.guides[0].value = $scope.x0;
+      $scope.chart.guides[1].value = $scope.x1;
+      $scope.chart.guides[2].value = $scope.x2;
+      $scope.chart.guides[3].value = $scope.x3;
+
+      $scope.functionCalculated += 1;
+
+      $scope.currentMin = f1 < f2 ? f1 : f2;
+      $scope.currentMinX = f1 < f2 ? $scope.x1 : $scope.x2;
+
+      $scope.chart.dataProvider.push({
+        "x": $scope.currentMinX,
+        "y": $scope.currentMin
+      });
+      $scope.chart.validateData();
+
+      $scope.stepsTaken++;
+    }
+
+    $scope.$emit('updatedEvent', null);*/
+  };
+
+  $scope.calculateBrackets = function() {
+    $scope.fa = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.ax);
+    $scope.fb = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.bx);
+
+    // swapping if needed
+    if($scope.fb > $scope.fa) {
+      $scope.fb = [$scope.fa, $scope.fa = $scope.fb][0];
+      $scope.bx = [$scope.ax, $scope.ax = $scope.bx][0];
+    }
+
+    // first guess for c
+    $scope.cx = $scope.bx + $scope.GOLD*($scope.bx - $scope.ax);
+    $scope.fc = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.cx);
+
+    console.log('before');
+    console.log($scope.ax, $scope.bx, $scope.cx);
+    console.log($scope.fa, $scope.fb, $scope.fc);
+    while($scope.fb >= $scope.fc) {
+      var u = $scope.cx + $scope.GOLD * ($scope.cx-$scope.bx);
+      var fu = model.calculateTargetFunctionValue($scope.modifiedResistor, u);
+
+      $scope.ax = $scope.bx; $scope.bx = $scope.cx; $scope.cx = u;
+      $scope.fa = $scope.fb; $scope.fb = $scope.fc; $scope.fc = fu;
+    }
+
+    $scope.$emit('updatedEvent', null);
+  };
+
+  $scope.findMinimum = function() {
+    $scope.x0 = $scope.ax;
+    $scope.x3 = $scope.cx;
+
+    if(Math.abs($scope.cx-$scope.bx) > Math.abs($scope.bx-$scope.ax)) {
+      $scope.x1 = $scope.bx; $scope.x2 = $scope.bx+$scope.C*($scope.cx-$scope.bx);
+    } else {
+      $scope.x2 = $scope.bx; $scope.x1 = $scope.bx-$scope.C*($scope.bx-$scope.ax);
+    }
+
+    $scope.chart.guides[0].value = $scope.x0;
+    $scope.chart.guides[1].value = $scope.x1;
+    $scope.chart.guides[2].value = $scope.x2;
+    $scope.chart.guides[3].value = $scope.x3;
+    $scope.chart.validateData();
+
+    $scope.functionCalculated = 2;
+    /*while(Math.abs($scope.x3-$scope.x0) > $scope.TOL*(Math.abs($scope.x1) + Math.abs($scope.x2))) {
+
+     }*/
+  };
+
+  //$scope.findMinimum();
 }]);
 
 /*var r = ($scope.bx-$scope.ax)*($scope.fb-$scope.fc);
