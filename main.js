@@ -29,15 +29,40 @@ module.service('ModelService', function() {
     new Resistor("R2", 30, 1, 3),
     new Resistor("R3", 1, 2, 3),
     new Resistor("R4", 1, 2, 0),
-    new Resistor("R5", 4, 1, 3)
+    new Resistor("R5", 10, 1, 3)
   ];
   var coefficientMatrix = [];
   var gradientVector = [];
+  var gessianMatrix = [];
   var nodeVoltages = [];
+
+  var gessian = 0;
 
   this.recalculate = function() {
     calculateNodeVoltages();
     calculateGradientVector();
+    calculateGessianMatrix();
+  };
+
+  var calculateGessianMatrix = function() {
+    var diffMatrix1 = differentiateMatrix(resistors[1]); //дифф по первому вар. параметру
+    var diffMatrix2 = differentiateMatrix(resistors[4]);//дифф по второму вар. параметру
+    var solution1 = numeric.neg(numeric.dot(diffMatrix1, nodeVoltages)); //умножаем на вектор u1 u2 u3
+    var solution2 = numeric.neg(numeric.dot(diffMatrix2, nodeVoltages)); //умножаем на вектор u1 u2 u3
+    var firstRightSide = numeric.add(solution1, solution2);  // суммируем получившиеся векторы
+
+    // gessiMatrixEqualValues = значения на индексах 01 и 10 в матрице Гессе
+    var gessiMatrixEqualValues = numeric.solve(coefficientMatrix, firstRightSide)[0]; // решаем СЛАУ для матрицы коэф начальной и предыдущей строки, берем значение по счету какое брали раньше
+    // numeric.dot -- умножение вектора на матрицу или вектора на вектор, потом умножаем на -2
+    var solution00 = numeric.mul(numeric.dot(diffMatrix1, numeric.dot(diffMatrix1, nodeVoltages)), -2);
+    var solution11 = numeric.mul(numeric.dot(diffMatrix2, numeric.dot(diffMatrix2, nodeVoltages)), -2);
+    // получаем значения для индексов 00 и 11 в матрице Гессе
+    var gessiMatrix00 = numeric.solve(coefficientMatrix, solution00)[0];
+    var gessiMatrix11 = numeric.solve(coefficientMatrix, solution11)[0];
+    // матрица
+    gessianMatrix = [[gessiMatrix00, gessiMatrixEqualValues],[gessiMatrixEqualValues, gessiMatrix11]];
+    // ее определитель - Гессинан
+    gessian = (gessianMatrix[0][0] * gessianMatrix[1][1]) - ( gessianMatrix[0][1] * gessianMatrix[1][0]);
   };
 
   var calculateGradientVector = function() {
@@ -111,6 +136,10 @@ module.service('ModelService', function() {
     return gradientVector;
   };
 
+  this.getGessianMatrix = function() {
+    return gessianMatrix;
+  }
+
   this.getTargetFunctionValue = function() {
     return Math.pow(nodeVoltages[DESIRED_VOLTAGE_NUMBER] - DESIRED_NODE_VOLTAGE, 2);
   };
@@ -142,6 +171,7 @@ module.controller('MainController', ['$scope', 'ModelService', function($scope, 
     $scope.nodeVoltages = model.getNodesList();
     $scope.gradientVector = model.getGradientVector();
     $scope.targetFunctionValue = model.getTargetFunctionValue();
+    $scope.gessianMatrix = model.getGessianMatrix();
   };
 
   $scope.updateModel();
@@ -624,16 +654,18 @@ module.controller('GradientDescentController', ['$scope', 'ModelService', functi
     }
   );
 
-  $scope.ax = 30;
-  $scope.fa = 0;
-  $scope.step = 0.5;
+  $scope.ax = 30; $scope.bx = 7;
+  $scope.fa = 0; $scope.fb = 0;
+  $scope.step = 0.01;
 
   $scope.stepsTaken = 0; $scope.functionCalculated = 0;
-  $scope.modifiedResistor = model.getResistorsList()[1];
 
   $scope.findMinimumStep = function() {
-    $scope.ax = $scope.ax - $scope.step * model.getGradientVector()[1];
-    $scope.fa = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.ax);
+    $scope.ax = $scope.ax + $scope.step * model.getGradientVector()[0];
+    $scope.bx = $scope.bx + $scope.step * model.getGradientVector()[3];
+
+    $scope.fa = model.calculateTargetFunctionValue(model.getResistorsList()[1], $scope.ax);
+    $scope.fb = model.calculateTargetFunctionValue(model.getResistorsList()[4], $scope.bx);
     $scope.$emit('updatedEvent', null);
 
     $scope.stepsTaken++;
@@ -645,94 +677,126 @@ module.controller('GradientDescentController', ['$scope', 'ModelService', functi
       "y": $scope.fa
     });
     $scope.chart.validateData();
-
-    /*var f1 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x1);
-    var f2 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x2);
-
-    if(Math.abs($scope.x3-$scope.x0) > $scope.TOL*(Math.abs($scope.x1) + Math.abs($scope.x2))) {
-      if(f2 < f1) {
-        $scope.x0 = $scope.x1; $scope.x1 = $scope.x2; $scope.x2=$scope.R*$scope.x1+$scope.C*$scope.x3;
-        f1 = f2;
-        f2 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x2);
-      } else {
-        $scope.x3 = $scope.x2; $scope.x2 = $scope.x1; $scope.x1 = $scope.R*$scope.x2 + $scope.C*$scope.x0;
-        f2 = f1;
-        f1 = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.x1);
-      }
-
-      $scope.chart.guides[0].value = $scope.x0;
-      $scope.chart.guides[1].value = $scope.x1;
-      $scope.chart.guides[2].value = $scope.x2;
-      $scope.chart.guides[3].value = $scope.x3;
-
-      $scope.functionCalculated += 1;
-
-      $scope.currentMin = f1 < f2 ? f1 : f2;
-      $scope.currentMinX = f1 < f2 ? $scope.x1 : $scope.x2;
-
-      $scope.chart.dataProvider.push({
-        "x": $scope.currentMinX,
-        "y": $scope.currentMin
-      });
-      $scope.chart.validateData();
-
-      $scope.stepsTaken++;
-    }
-
-    $scope.$emit('updatedEvent', null);*/
   };
+}]);
 
-  $scope.calculateBrackets = function() {
-    $scope.fa = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.ax);
-    $scope.fb = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.bx);
-
-    // swapping if needed
-    if($scope.fb > $scope.fa) {
-      $scope.fb = [$scope.fa, $scope.fa = $scope.fb][0];
-      $scope.bx = [$scope.ax, $scope.ax = $scope.bx][0];
+module.controller('NewtonMethodController', ['$scope', 'ModelService', function($scope, model) {
+  $scope.chart = AmCharts.makeChart("chartdiv-gdc",
+    {
+      "type": "xy",
+      "pathToImages": "http://cdn.amcharts.com/lib/3/images/",
+      "startDuration": 1.5,
+      "trendLines": [],
+      "graphs": [
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "diamond",
+          "id": "AmGraph-1",
+          "lineAlpha": 0,
+          "lineColor": "#b0de09",
+          "valueField": "value",
+          "xField": "x",
+          "yField": "y"
+        },
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "round",
+          "id": "AmGraph-2",
+          "lineAlpha": 0,
+          "lineColor": "#fcd202",
+          "valueField": "value2",
+          "xField": "x2",
+          "yField": "y2"
+        }
+      ],
+      "chartScrollbar": {
+        "autoGridCount": true,
+        "graph": "g1",
+        "scrollbarHeight": 20
+      },
+      "guides": [
+        {
+          "label": "x0",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x1",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x2",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x3",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        }
+      ],
+      "valueAxes": [
+        {
+          "id": "ValueAxis-1",
+          "axisAlpha": 0
+        },
+        {
+          "id": "ValueAxis-2",
+          "position": "bottom",
+          "axisAlpha": 0
+        }
+      ],
+      "allLabels": [],
+      "balloon": {},
+      "titles": [],
+      "dataProvider": [{
+        "x":0, "y":0
+      }]
     }
+  );
 
-    // first guess for c
-    $scope.cx = $scope.bx + $scope.GOLD*($scope.bx - $scope.ax);
-    $scope.fc = model.calculateTargetFunctionValue($scope.modifiedResistor, $scope.cx);
+  $scope.ax = model.getResistorsList()[1].value; $scope.bx = model.getResistorsList()[4].value;
+  $scope.fa = 0; $scope.fb = 0;
 
-    console.log('before');
-    console.log($scope.ax, $scope.bx, $scope.cx);
-    console.log($scope.fa, $scope.fb, $scope.fc);
-    while($scope.fb >= $scope.fc) {
-      var u = $scope.cx + $scope.GOLD * ($scope.cx-$scope.bx);
-      var fu = model.calculateTargetFunctionValue($scope.modifiedResistor, u);
+  $scope.stepsTaken = 0; $scope.functionCalculated = 0;
 
-      $scope.ax = $scope.bx; $scope.bx = $scope.cx; $scope.cx = u;
-      $scope.fa = $scope.fb; $scope.fb = $scope.fc; $scope.fc = fu;
-    }
+  $scope.findMinimumStep = function() {
+    var delta = numeric.solve(model.getGessianMatrix(), numeric.neg(model.getGradientVector()));
+    console.log(delta);
+    $scope.ax = $scope.ax + delta[0];
+    $scope.bx = $scope.bx + delta[3];
 
+    $scope.fa = model.calculateTargetFunctionValue(model.getResistorsList()[1], $scope.ax);
+    $scope.fb = model.calculateTargetFunctionValue(model.getResistorsList()[4], $scope.bx);
     $scope.$emit('updatedEvent', null);
-  };
 
-  $scope.findMinimum = function() {
-    $scope.x0 = $scope.ax;
-    $scope.x3 = $scope.cx;
+    $scope.stepsTaken++;
+    $scope.functionCalculated += 1;
+    $scope.currentMin = $scope.fa;
 
-    if(Math.abs($scope.cx-$scope.bx) > Math.abs($scope.bx-$scope.ax)) {
-      $scope.x1 = $scope.bx; $scope.x2 = $scope.bx+$scope.C*($scope.cx-$scope.bx);
-    } else {
-      $scope.x2 = $scope.bx; $scope.x1 = $scope.bx-$scope.C*($scope.bx-$scope.ax);
-    }
-
-    $scope.chart.guides[0].value = $scope.x0;
-    $scope.chart.guides[1].value = $scope.x1;
-    $scope.chart.guides[2].value = $scope.x2;
-    $scope.chart.guides[3].value = $scope.x3;
+    $scope.chart.dataProvider.push({
+      "x": $scope.ax,
+      "y": $scope.fa
+    });
     $scope.chart.validateData();
-
-    $scope.functionCalculated = 2;
-    /*while(Math.abs($scope.x3-$scope.x0) > $scope.TOL*(Math.abs($scope.x1) + Math.abs($scope.x2))) {
-
-     }*/
   };
-
-  //$scope.findMinimum();
 }]);
 
 /*var r = ($scope.bx-$scope.ax)*($scope.fb-$scope.fc);
