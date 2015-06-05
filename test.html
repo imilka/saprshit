@@ -165,10 +165,28 @@
             </div>
           </div>-->
 
-          <div class="clearfix"></div>
+          <!--<div class="clearfix"></div>
           <h1>Newton method</h1>
 
           <div ng-controller="NewtonMethodController">
+            <div id="chartdiv-gdc" style="float:left;width: 800px; height: 400px; background-color: #FFFFFF;" ></div>
+            <div style="margin-left:25px;float:left;">
+              <h4>{{modifiedResistor.name}} value: {{modifiedResistor.value | number:4}}</h4>
+              <h4>Target function value: {{currentMin | number:4}}</h4>
+              <br>
+              <h4>Steps taken: {{stepsTaken}}</h4>
+              <h4>Function calculations: {{functionCalculated}}</h4>
+              <br>
+              <h5>a: {{ax | number:4}}</h5>
+              <br>
+              <button ng-click="findMinimumStep()" class="btn btn-primary btn-raised">Step</button>
+            </div>
+          </div>-->
+
+          <div class="clearfix"></div>
+          <h1>Davidon-Fletcher-Powell method</h1>
+
+          <div ng-controller="DavidonFletcherPowellController">
             <div id="chartdiv-gdc" style="float:left;width: 800px; height: 400px; background-color: #FFFFFF;" ></div>
             <div style="margin-left:25px;float:left;">
               <h4>{{modifiedResistor.name}} value: {{modifiedResistor.value | number:4}}</h4>

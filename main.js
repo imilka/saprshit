@@ -11,7 +11,7 @@ module.service('ModelService', function() {
   var DESIRED_VOLTAGE_NUMBER = 2;
   var DESIRED_NODE_VOLTAGE = 15;
 
-  var IMMUTABLE_RESISTORS = ["R1"];
+  var IMMUTABLE_RESISTORS = ["R1", "R3", "R4"];
 
   function Resistor(name, value, leftNode, rightNode) {
     this.name = name;
@@ -782,6 +782,195 @@ module.controller('NewtonMethodController', ['$scope', 'ModelService', function(
     console.log(delta);
     $scope.ax = $scope.ax + delta[0];
     $scope.bx = $scope.bx + delta[3];
+
+    $scope.fa = model.calculateTargetFunctionValue(model.getResistorsList()[1], $scope.ax);
+    $scope.fb = model.calculateTargetFunctionValue(model.getResistorsList()[4], $scope.bx);
+    $scope.$emit('updatedEvent', null);
+
+    $scope.stepsTaken++;
+    $scope.functionCalculated += 1;
+    $scope.currentMin = $scope.fa;
+
+    $scope.chart.dataProvider.push({
+      "x": $scope.ax,
+      "y": $scope.fa
+    });
+    $scope.chart.validateData();
+  };
+}]);
+
+module.controller('DavidonFletcherPowellController', ['$scope', 'ModelService', function($scope, model) {
+  $scope.chart = AmCharts.makeChart("chartdiv-gdc",
+    {
+      "type": "xy",
+      "pathToImages": "http://cdn.amcharts.com/lib/3/images/",
+      "startDuration": 1.5,
+      "trendLines": [],
+      "graphs": [
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "diamond",
+          "id": "AmGraph-1",
+          "lineAlpha": 0,
+          "lineColor": "#b0de09",
+          "valueField": "value",
+          "xField": "x",
+          "yField": "y"
+        },
+        {
+          "balloonText": "x:<b>[[x]]</b> y:<b>[[y]]</b><br>value:<b>[[value]]</b>",
+          "bullet": "round",
+          "id": "AmGraph-2",
+          "lineAlpha": 0,
+          "lineColor": "#fcd202",
+          "valueField": "value2",
+          "xField": "x2",
+          "yField": "y2"
+        }
+      ],
+      "chartScrollbar": {
+        "autoGridCount": true,
+        "graph": "g1",
+        "scrollbarHeight": 20
+      },
+      "guides": [
+        {
+          "label": "x0",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x1",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x2",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        },
+        {
+          "label": "x3",
+          "inside": true,
+          "fillColor": new RGBColor("#FF0000"),
+          "color": new RGBColor("#FF0000"),
+          "value": 0,
+          "lineThickness": 3,
+          "valueAxis": "ValueAxis-2"
+        }
+      ],
+      "valueAxes": [
+        {
+          "id": "ValueAxis-1",
+          "axisAlpha": 0
+        },
+        {
+          "id": "ValueAxis-2",
+          "position": "bottom",
+          "axisAlpha": 0
+        }
+      ],
+      "allLabels": [],
+      "balloon": {},
+      "titles": [],
+      "dataProvider": [{
+        "x":0, "y":0
+      }]
+    }
+  );
+
+  $scope.ax = model.getResistorsList()[1].value; $scope.bx = model.getResistorsList()[4].value;
+  $scope.a = [[1, 0],[0, 1]];
+  $scope.t = 0.1;
+
+  $scope.prevGrad = [];
+
+  $scope.fa = 0; $scope.fb = 0;
+
+  $scope.stepsTaken = 0; $scope.functionCalculated = 0;
+
+  $scope.calculateFunctionValue = function(x, grad, t) {
+    return x - t*grad;
+  };
+
+  $scope.findMinimum = function(x, grad) {
+    console.log(x, grad);
+    var min = 99999999; var minval = 0;
+    var val = 0;
+    while(val < 1) {
+      var tgt = $scope.calculateFunctionValue(x, grad, val);
+      if(tgt < min) {
+        min = tgt;
+        minval = val;
+      }
+      val += 0.01;
+    }
+    console.log(min);
+    console.log(minval);
+  };
+
+  $scope.findMinimumStep = function() {
+    if($scope.stepsTaken > 0) {
+      var gk = numeric.sub(model.getGradientVector(), $scope.prevGrad);
+      var xk = [$scope.ax - $scope.pa, $scope.bx - $scope.pb];
+
+      var xkn = [[xk[0], xk[1]]];
+      var gkn = [[gk[0], gk[1]]];
+      var xkt = numeric.transpose(xkn);
+      var gkt = numeric.transpose(gkn);
+
+      $scope.findMinimum(xk[0], model.getGradientVector()[0]);
+
+      /*var u = [[1, 2, 3]];
+      var v = numeric.transpose([[4, 2, 0]]);
+      console.log(numeric.dot(u, v));*/
+
+      /*var xkn = [[-0.72, -0.6]];
+      var xkt = numeric.transpose(xkn);
+      var gkn = [[-3.48, -1.92]];
+      var gkt = numeric.transpose(gkn);*/
+
+      var ac1 = numeric.div(
+        numeric.dot(xkt, xkn),
+        numeric.dot(xkn, gkt)[0][0]
+      );
+
+      /*var ac2 = numeric.div(
+        numeric.mul(numeric.mul(numeric.dot($scope.a, gk), gk), $scope.a),
+        numeric.dot(numeric.mul(gk, $scope.a), gk)
+      );*/
+
+      var ac2 = numeric.div(
+        numeric.mul(numeric.dot(numeric.dot($scope.a, gkt), gkn), $scope.a),
+        numeric.dot(numeric.dot(gkn, $scope.a), gkt)[0][0]
+      );
+
+      //console.log(ac1);
+      //console.log(ac2);
+      $scope.ac = numeric.sub(ac1, ac2);
+      //console.log($scope.ac);
+      $scope.a = numeric.add($scope.a, $scope.ac);
+    }
+
+    $scope.prevGrad = model.getGradientVector();
+
+    var d = numeric.dot(numeric.neg($scope.a), model.getGradientVector());
+
+    $scope.pa = $scope.ax; $scope.pb = $scope.bx;
+    $scope.ax = $scope.ax + $scope.t * d[0];
+    $scope.bx = $scope.bx + $scope.t * d[1];
 
     $scope.fa = model.calculateTargetFunctionValue(model.getResistorsList()[1], $scope.ax);
     $scope.fb = model.calculateTargetFunctionValue(model.getResistorsList()[4], $scope.bx);
